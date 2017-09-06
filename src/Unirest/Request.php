@@ -20,6 +20,12 @@ class Request
         'method' => CURLAUTH_BASIC
     );
 
+    private static $clientSideAuth = array (
+        'keyFile' => '',
+        'caFile' => '',
+        'certFile' => ''
+    );
+
     private static $proxy = array(
         'port' => false,
         'tunnel' => false,
@@ -189,6 +195,23 @@ class Request
         self::$auth['user'] = $username;
         self::$auth['pass'] = $password;
         self::$auth['method'] = $method;
+    }
+
+    /**
+     * Set authentication method with client side certificates
+     *
+     * @param string $keyFile path to file
+     * @param string $caFile  path to file
+     * @param string $certFile path to file
+     */
+    public static function clientSideAuth($keyFile = '', $caFile = '', $certFile = '')
+    {
+        if (!file_exists($keyFile) || !file_exists($caFile) || !file_exists($certFile)) {
+            throw new Exception("Any Cert File Not Found");
+        }
+        self::$clientSideAuth['keyFile'] = $keyFile;
+        self::$clientSideAuth['caFile'] = $caFile;
+        self::$clientSideAuth['certFile'] = $certFile;
     }
 
     /**
@@ -457,6 +480,14 @@ class Request
             curl_setopt_array(self::$handle, array(
                 CURLOPT_HTTPAUTH    => self::$auth['method'],
                 CURLOPT_USERPWD     => self::$auth['user'] . ':' . self::$auth['pass']
+            ));
+        }
+
+        if (!empty(self::$clientSideAuth['keyFile'])) {
+            curl_setopt_array(self::$handle, array(
+                CURLOPT_SSLKEY    => self::$clientSideAuth['keyFile'],
+                CURLOPT_CAINFO    => self::$clientSideAuth['caFile'],
+                CURLOPT_SSLCERT    => self::$clientSideAuth['certFile']
             ));
         }
 
